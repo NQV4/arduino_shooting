@@ -137,6 +137,8 @@ unsigned long Judge_Time4[UNIT-1] = {0};    // Judge Time 4
 unsigned short Game_Score_Combo = 0;
 float Combo_Multi = 1;
 
+int last_time = 10;
+bool last_mode = 1;
 
 //--------------------------------------------------------
 //  Interrupt Function
@@ -248,11 +250,17 @@ void loop() {
     if (cnt_s_GameTime >= GAME_TIME_S){
       Game_Flag = 0;
       mode = 100;
+      last_mode = 1;
+    }
+    if (cnt_s_GameTime >= GAME_TIME_S - last_time){
+      last_mode = 2;
+      Serial.print("ラストスパート");
     }
   }
 
   switch(mode){
     case 0:
+      last_mode = 1;
       Game_Flag = 0;
       Game_Score = 0;
       cnt_s_GameTime = 0;
@@ -348,31 +356,31 @@ void loop() {
     case 70:      // Calcurate Game Point
         if (Game_HitTime <= GAME_JUDGE_TIME1) {
             Combo_Add();
-            Game_Score = Game_Score + GAME_POINT1 * Combo_Multi;
+            Game_Score = Game_Score + GAME_POINT1 * Combo_Multi * last_mode;
             Combo_Sound();
         }
         else if (Game_HitTime <= GAME_JUDGE_TIME2) {
             Combo_Reset();
-            Game_Score = Game_Score + GAME_POINT2 * Combo_Multi;
+            Game_Score = Game_Score + GAME_POINT2 * last_mode;
             DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_004);
             while(digitalRead(PIN_DFP_BUSY) == 0);
         }
         else if (Game_HitTime <= GAME_JUDGE_TIME3) {
             Combo_Reset();
-            Game_Score = Game_Score + GAME_POINT3;
+            Game_Score = Game_Score + GAME_POINT3 * last_mode;
             DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_005);
             while(digitalRead(PIN_DFP_BUSY) == 0);
         }
         else if (Game_HitTime <= GAME_JUDGE_TIME4) {
             Combo_Reset();
-            Game_Score = Game_Score + GAME_POINT4;
+            Game_Score = Game_Score + GAME_POINT4 * last_mode;
 
             DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_006);
             while(digitalRead(PIN_DFP_BUSY) == 0);
         }
         else {
             Combo_Reset();
-            Game_Score = Game_Score + GAME_POINT4;
+            Game_Score = Game_Score + GAME_POINT4 * last_mode;
             DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_007);
             while(digitalRead(PIN_DFP_BUSY) == 0);
         }
