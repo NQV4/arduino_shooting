@@ -10,17 +10,17 @@
 #include <Wire.h>
 
 //--------------------------------------------------------
-// Game
+// Games
 #define UNIT               6
 
-#define GAME_TIME_S        10
+#define GAME_TIME_S        60
 
-#define GAME_JUDGE_TIME1   800
-#define GAME_JUDGE_TIME2   1010
-#define GAME_JUDGE_TIME3   1515
-#define GAME_JUDGE_TIME4   2020
+#define GAME_JUDGE_TIME1   500
+#define GAME_JUDGE_TIME2   1000
+#define GAME_JUDGE_TIME3   1500
+#define GAME_JUDGE_TIME4   2000
 
-#define GAME_POINT1        824
+#define GAME_POINT1        150
 #define GAME_POINT2        100
 #define GAME_POINT3        75
 #define GAME_POINT4        35
@@ -137,8 +137,8 @@ unsigned long Judge_Time4[UNIT-1] = {0};    // Judge Time 4
 unsigned short Game_Score_Combo = 0;
 float Combo_Multi = 1;
 
-int last_time = 10;
-bool last_mode = 1;
+int Last_Mode = 1;
+int Last_Time = 50;
 
 //--------------------------------------------------------
 //  Interrupt Function
@@ -220,9 +220,10 @@ void setup() {
 
   // DFPlayer Initialize
   DFPlayer_Init();
-  DFPlayer.volume(30);      // Set Volume (0 to 30)
+  DFPlayer.volume(25);      // Set Volume (0 to 30)
   DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_013);
   while(digitalRead(PIN_DFP_BUSY) == 0);
+  
   delay(5000);
 
   digitalWrite(PIN_LED, LOW);
@@ -250,23 +251,21 @@ void loop() {
     if (cnt_s_GameTime >= GAME_TIME_S){
       Game_Flag = 0;
       mode = 100;
-      last_mode = 1;
     }
-    if (cnt_s_GameTime >= GAME_TIME_S - last_time){
-      last_mode = 2;
-      Serial.print("ラストスパート");
+    if (cnt_s_GameTime >= Last_Time && Last_Mode != 2){
+      Last_Mode = 2;
+      DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_012);
     }
   }
 
   switch(mode){
     case 0:
-      last_mode = 1;
       Game_Flag = 0;
       Game_Score = 0;
       cnt_s_GameTime = 0;
       if (PushSwitch != 0){
-        // DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_012);
-        // while(digitalRead(PIN_DFP_BUSY) == 0);
+        DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_012);
+        while(digitalRead(PIN_DFP_BUSY) == 0);
         i2c_Transmit(5, 0x54, 0x45, 0x53, 0x54);    // Score : test
         for(t=0; t<=4; t++){                        // Hit Check Mode : 20
           Set_Flag(t, 20);
@@ -307,6 +306,7 @@ void loop() {
       DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_001);
       if (digitalRead(PIN_DFP_BUSY) == 0){
         mode = 21;
+        Last_Mode = 1;
       }
       break;
     case 21:
@@ -356,38 +356,39 @@ void loop() {
     case 70:      // Calcurate Game Point
         if (Game_HitTime <= GAME_JUDGE_TIME1) {
             Combo_Add();
-            Game_Score = Game_Score + GAME_POINT1 * Combo_Multi * last_mode;
+            Game_Score = Game_Score + GAME_POINT1 * Combo_Multi * Last_Mode;
             Combo_Sound();
         }
         else if (Game_HitTime <= GAME_JUDGE_TIME2) {
             Combo_Reset();
-            Game_Score = Game_Score + GAME_POINT2 * last_mode;
+            Game_Score = Game_Score + GAME_POINT2 * Last_Mode;
             DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_004);
             while(digitalRead(PIN_DFP_BUSY) == 0);
         }
         else if (Game_HitTime <= GAME_JUDGE_TIME3) {
             Combo_Reset();
-            Game_Score = Game_Score + GAME_POINT3 * last_mode;
+            Game_Score = Game_Score + GAME_POINT3 * Last_Mode;
             DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_005);
             while(digitalRead(PIN_DFP_BUSY) == 0);
         }
         else if (Game_HitTime <= GAME_JUDGE_TIME4) {
             Combo_Reset();
-            Game_Score = Game_Score + GAME_POINT4 * last_mode;
+            Game_Score = Game_Score + GAME_POINT4 * Last_Mode;
 
             DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_006);
             while(digitalRead(PIN_DFP_BUSY) == 0);
         }
         else {
             Combo_Reset();
-            Game_Score = Game_Score + GAME_POINT4 * last_mode;
+            Game_Score = Game_Score + GAME_POINT4 * Last_Mode;
             DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_007);
             while(digitalRead(PIN_DFP_BUSY) == 0);
         }
-      Serial.print(Combo_Multi);
-      Serial.println("");
       Serial.print(Game_Score);
       Serial.println("");
+      if (Game_Score > 9999){
+        Game_Score = 9999;
+      }
       Set_Score(Game_Score);
       delay(300);
       mode = 80;
@@ -686,7 +687,7 @@ void Set_Score(unsigned long value)
   unsigned char D3;
   unsigned char D4;
 
-  if (value < 9999){
+  if (value <= 9999){
     v = value;
     D4 = (unsigned char)(v%10);
     D3 = (unsigned char)((v%100)/10);
@@ -805,7 +806,7 @@ void DFPlayer_Init(void)
     Serial.println(F("Unable to begin:"));
     Serial.println(F("1.Please recheck the connection!"));
     Serial.println(F("2.Please insert the SD card!"));
-    while(true);   
+    // while(true);   
   }
   Serial.println(F("DFPlayer Mini Active."));
 }
