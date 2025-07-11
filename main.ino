@@ -20,8 +20,8 @@
 #define GAME_JUDGE_TIME3   1500
 #define GAME_JUDGE_TIME4   2000
 
-#define GAME_POINT1        150
-#define GAME_POINT2        100
+#define GAME_POINT1        155
+#define GAME_POINT2        135
 #define GAME_POINT3        75
 #define GAME_POINT4        35
 
@@ -59,6 +59,7 @@
 #define DFP_FILE_011    11 //combo2
 #define DFP_FILE_012    12 //start test
 #define DFP_FILE_013    13 //connect
+#define DFP_FILE_014    14 //last
 
 SoftwareSerial          DFPSerial(PIN_DFP_RX, PIN_DFP_TX);
 DFRobotDFPlayerMini     DFPlayer;
@@ -220,7 +221,7 @@ void setup() {
 
   // DFPlayer Initialize
   DFPlayer_Init();
-  DFPlayer.volume(25);      // Set Volume (0 to 30)
+  DFPlayer.volume(30);      // Set Volume (0 to 30)
   DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_013);
   while(digitalRead(PIN_DFP_BUSY) == 0);
   
@@ -254,7 +255,7 @@ void loop() {
     }
     if (cnt_s_GameTime >= Last_Time && Last_Mode != 2){
       Last_Mode = 2;
-      DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_012);
+      DFPlayer.playFolder(DFP_FOLDER_01, DFP_FILE_014);
     }
   }
 
